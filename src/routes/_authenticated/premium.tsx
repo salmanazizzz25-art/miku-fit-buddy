@@ -5,7 +5,7 @@ import { AppShell, PageHeader } from "@/components/AppShell";
 import { MikuCharacter } from "@/components/MikuCharacter";
 import { useState } from "react";
 
-export const Route = createFileRoute("/premium")({
+export const Route = createFileRoute("/_authenticated/premium")({
   component: Premium,
   head: () => ({ meta: [{ title: "NutriMiku — Premium" }] }),
 });

@@ -5,7 +5,7 @@ import { AppShell, PageHeader } from "@/components/AppShell";
 import { workouts, exercises, weightTrend, badges } from "@/lib/mockData";
 import { ResponsiveContainer, LineChart, Line, XAxis, Tooltip, CartesianGrid } from "recharts";
 
-export const Route = createFileRoute("/fitness")({
+export const Route = createFileRoute("/_authenticated/fitness")({
   component: Fitness,
   head: () => ({ meta: [{ title: "NutriMiku — Fitness" }] }),
 });

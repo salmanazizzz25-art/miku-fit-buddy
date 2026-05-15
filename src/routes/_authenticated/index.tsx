@@ -6,7 +6,7 @@ import { MikuCharacter } from "@/components/MikuCharacter";
 import { RingChart } from "@/components/RingChart";
 import { user, todayMacros, quote } from "@/lib/mockData";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   component: Home,
   head: () => ({
     meta: [{ title: "NutriMiku — Today" }],

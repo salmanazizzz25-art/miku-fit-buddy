@@ -9,133 +9,207 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as PremiumRouteImport } from './routes/premium'
-import { Route as NutritionRouteImport } from './routes/nutrition'
-import { Route as MikuRouteImport } from './routes/miku'
-import { Route as FitnessRouteImport } from './routes/fitness'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedPremiumRouteImport } from './routes/_authenticated/premium'
+import { Route as AuthenticatedNutritionRouteImport } from './routes/_authenticated/nutrition'
+import { Route as AuthenticatedMikuRouteImport } from './routes/_authenticated/miku'
+import { Route as AuthenticatedFitnessRouteImport } from './routes/_authenticated/fitness'
 
-const PremiumRoute = PremiumRouteImport.update({
-  id: '/premium',
-  path: '/premium',
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NutritionRoute = NutritionRouteImport.update({
-  id: '/nutrition',
-  path: '/nutrition',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MikuRoute = MikuRouteImport.update({
-  id: '/miku',
-  path: '/miku',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FitnessRoute = FitnessRouteImport.update({
-  id: '/fitness',
-  path: '/fitness',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPremiumRoute = AuthenticatedPremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedNutritionRoute = AuthenticatedNutritionRouteImport.update({
+  id: '/nutrition',
+  path: '/nutrition',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMikuRoute = AuthenticatedMikuRouteImport.update({
+  id: '/miku',
+  path: '/miku',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFitnessRoute = AuthenticatedFitnessRouteImport.update({
+  id: '/fitness',
+  path: '/fitness',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/fitness': typeof FitnessRoute
-  '/miku': typeof MikuRoute
-  '/nutrition': typeof NutritionRoute
-  '/premium': typeof PremiumRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/fitness': typeof AuthenticatedFitnessRoute
+  '/miku': typeof AuthenticatedMikuRoute
+  '/nutrition': typeof AuthenticatedNutritionRoute
+  '/premium': typeof AuthenticatedPremiumRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/fitness': typeof FitnessRoute
-  '/miku': typeof MikuRoute
-  '/nutrition': typeof NutritionRoute
-  '/premium': typeof PremiumRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/fitness': typeof AuthenticatedFitnessRoute
+  '/miku': typeof AuthenticatedMikuRoute
+  '/nutrition': typeof AuthenticatedNutritionRoute
+  '/premium': typeof AuthenticatedPremiumRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/fitness': typeof FitnessRoute
-  '/miku': typeof MikuRoute
-  '/nutrition': typeof NutritionRoute
-  '/premium': typeof PremiumRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/_authenticated/fitness': typeof AuthenticatedFitnessRoute
+  '/_authenticated/miku': typeof AuthenticatedMikuRoute
+  '/_authenticated/nutrition': typeof AuthenticatedNutritionRoute
+  '/_authenticated/premium': typeof AuthenticatedPremiumRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/onboarding'
+    | '/fitness'
+    | '/miku'
+    | '/nutrition'
+    | '/premium'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
-  id: '__root__' | '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
+  to:
+    | '/login'
+    | '/onboarding'
+    | '/fitness'
+    | '/miku'
+    | '/nutrition'
+    | '/premium'
+    | '/'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/login'
+    | '/onboarding'
+    | '/_authenticated/fitness'
+    | '/_authenticated/miku'
+    | '/_authenticated/nutrition'
+    | '/_authenticated/premium'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  FitnessRoute: typeof FitnessRoute
-  MikuRoute: typeof MikuRoute
-  NutritionRoute: typeof NutritionRoute
-  PremiumRoute: typeof PremiumRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/premium': {
-      id: '/premium'
-      path: '/premium'
-      fullPath: '/premium'
-      preLoaderRoute: typeof PremiumRouteImport
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/nutrition': {
-      id: '/nutrition'
-      path: '/nutrition'
-      fullPath: '/nutrition'
-      preLoaderRoute: typeof NutritionRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/miku': {
-      id: '/miku'
-      path: '/miku'
-      fullPath: '/miku'
-      preLoaderRoute: typeof MikuRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/fitness': {
-      id: '/fitness'
-      path: '/fitness'
-      fullPath: '/fitness'
-      preLoaderRoute: typeof FitnessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/premium': {
+      id: '/_authenticated/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof AuthenticatedPremiumRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/nutrition': {
+      id: '/_authenticated/nutrition'
+      path: '/nutrition'
+      fullPath: '/nutrition'
+      preLoaderRoute: typeof AuthenticatedNutritionRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/miku': {
+      id: '/_authenticated/miku'
+      path: '/miku'
+      fullPath: '/miku'
+      preLoaderRoute: typeof AuthenticatedMikuRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/fitness': {
+      id: '/_authenticated/fitness'
+      path: '/fitness'
+      fullPath: '/fitness'
+      preLoaderRoute: typeof AuthenticatedFitnessRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedFitnessRoute: typeof AuthenticatedFitnessRoute
+  AuthenticatedMikuRoute: typeof AuthenticatedMikuRoute
+  AuthenticatedNutritionRoute: typeof AuthenticatedNutritionRoute
+  AuthenticatedPremiumRoute: typeof AuthenticatedPremiumRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedFitnessRoute: AuthenticatedFitnessRoute,
+  AuthenticatedMikuRoute: AuthenticatedMikuRoute,
+  AuthenticatedNutritionRoute: AuthenticatedNutritionRoute,
+  AuthenticatedPremiumRoute: AuthenticatedPremiumRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  FitnessRoute: FitnessRoute,
-  MikuRoute: MikuRoute,
-  NutritionRoute: NutritionRoute,
-  PremiumRoute: PremiumRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

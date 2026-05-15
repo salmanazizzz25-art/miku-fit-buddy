@@ -6,7 +6,7 @@ import { AppShell, PageHeader } from "@/components/AppShell";
 import { MikuCharacter } from "@/components/MikuCharacter";
 import { mikuChat, cannedReplies } from "@/lib/mockData";
 
-export const Route = createFileRoute("/miku")({
+export const Route = createFileRoute("/_authenticated/miku")({
   component: MikuChat,
   head: () => ({ meta: [{ title: "NutriMiku — Talk to Miku" }] }),
 });
