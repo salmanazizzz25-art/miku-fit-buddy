@@ -2,13 +2,20 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Apple, Dumbbell, MessageCircleHeart, Crown } from "lucide-react";
 import { motion } from "motion/react";
 
-const items = [
+type NavItem = {
+  to: "/" | "/nutrition" | "/miku" | "/fitness" | "/premium";
+  label: string;
+  icon: typeof Home;
+  primary?: boolean;
+};
+
+const items: NavItem[] = [
   { to: "/", label: "Home", icon: Home },
   { to: "/nutrition", label: "Food", icon: Apple },
   { to: "/miku", label: "Miku", icon: MessageCircleHeart, primary: true },
   { to: "/fitness", label: "Train", icon: Dumbbell },
   { to: "/premium", label: "Premium", icon: Crown },
-] as const;
+];
 
 export function BottomNav() {
   const { pathname } = useLocation();
