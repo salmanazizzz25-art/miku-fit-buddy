@@ -1,4 +1,4 @@
-
+import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight, Settings } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight } from "lucide-react";
@@ -148,7 +148,19 @@ function Home() {
       <PageHeader
         title={`Hi, ${profile.name} ✨`}
         subtitle="Let's make today legendary."
-        right={
+       right={
+  <div className="flex items-center gap-2">
+    <div className="glass rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold">
+      <Flame className="w-4 h-4 text-orange-400" />
+      {profile.streak}d
+    </div>
+    <Link to="/settings">
+      <div className="glass rounded-full p-1.5">
+        <Settings className="w-4 h-4 text-muted-foreground" />
+      </div>
+    </Link>
+  </div>
+}
           <div className="glass rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold">
             <Flame className="w-4 h-4 text-orange-400" />
             {profile.streak}d
