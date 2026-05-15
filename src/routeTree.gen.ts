@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as NutritionRouteImport } from './routes/nutrition'
+import { Route as MikuRouteImport } from './routes/miku'
+import { Route as FitnessRouteImport } from './routes/fitness'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PremiumRoute = PremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NutritionRoute = NutritionRouteImport.update({
+  id: '/nutrition',
+  path: '/nutrition',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MikuRoute = MikuRouteImport.update({
+  id: '/miku',
+  path: '/miku',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FitnessRoute = FitnessRouteImport.update({
+  id: '/fitness',
+  path: '/fitness',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,72 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/fitness': typeof FitnessRoute
+  '/miku': typeof MikuRoute
+  '/nutrition': typeof NutritionRoute
+  '/premium': typeof PremiumRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/fitness': typeof FitnessRoute
+  '/miku': typeof MikuRoute
+  '/nutrition': typeof NutritionRoute
+  '/premium': typeof PremiumRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/fitness': typeof FitnessRoute
+  '/miku': typeof MikuRoute
+  '/nutrition': typeof NutritionRoute
+  '/premium': typeof PremiumRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
+  id: '__root__' | '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FitnessRoute: typeof FitnessRoute
+  MikuRoute: typeof MikuRoute
+  NutritionRoute: typeof NutritionRoute
+  PremiumRoute: typeof PremiumRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/premium': {
+      id: '/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nutrition': {
+      id: '/nutrition'
+      path: '/nutrition'
+      fullPath: '/nutrition'
+      preLoaderRoute: typeof NutritionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/miku': {
+      id: '/miku'
+      path: '/miku'
+      fullPath: '/miku'
+      preLoaderRoute: typeof MikuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fitness': {
+      id: '/fitness'
+      path: '/fitness'
+      fullPath: '/fitness'
+      preLoaderRoute: typeof FitnessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +121,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FitnessRoute: FitnessRoute,
+  MikuRoute: MikuRoute,
+  NutritionRoute: NutritionRoute,
+  PremiumRoute: PremiumRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
