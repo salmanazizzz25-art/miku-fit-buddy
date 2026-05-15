@@ -10,14 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NutritionRouteImport } from './routes/nutrition'
 import { Route as MikuRouteImport } from './routes/miku'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FitnessRouteImport } from './routes/fitness'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 
 const PremiumRoute = PremiumRouteImport.update({
   id: '/premium',
   path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NutritionRoute = NutritionRouteImport.update({
@@ -30,52 +38,93 @@ const MikuRoute = MikuRouteImport.update({
   path: '/miku',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FitnessRoute = FitnessRouteImport.update({
   id: '/fitness',
   path: '/fitness',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AuthenticatedIndexRoute
   '/fitness': typeof FitnessRoute
+  '/login': typeof LoginRoute
   '/miku': typeof MikuRoute
   '/nutrition': typeof NutritionRoute
+  '/onboarding': typeof OnboardingRoute
   '/premium': typeof PremiumRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/fitness': typeof FitnessRoute
+  '/login': typeof LoginRoute
   '/miku': typeof MikuRoute
   '/nutrition': typeof NutritionRoute
+  '/onboarding': typeof OnboardingRoute
   '/premium': typeof PremiumRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/fitness': typeof FitnessRoute
+  '/login': typeof LoginRoute
   '/miku': typeof MikuRoute
   '/nutrition': typeof NutritionRoute
+  '/onboarding': typeof OnboardingRoute
   '/premium': typeof PremiumRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
+  fullPaths:
+    | '/'
+    | '/fitness'
+    | '/login'
+    | '/miku'
+    | '/nutrition'
+    | '/onboarding'
+    | '/premium'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
-  id: '__root__' | '/' | '/fitness' | '/miku' | '/nutrition' | '/premium'
+  to:
+    | '/fitness'
+    | '/login'
+    | '/miku'
+    | '/nutrition'
+    | '/onboarding'
+    | '/premium'
+    | '/'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/fitness'
+    | '/login'
+    | '/miku'
+    | '/nutrition'
+    | '/onboarding'
+    | '/premium'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   FitnessRoute: typeof FitnessRoute
+  LoginRoute: typeof LoginRoute
   MikuRoute: typeof MikuRoute
   NutritionRoute: typeof NutritionRoute
+  OnboardingRoute: typeof OnboardingRoute
   PremiumRoute: typeof PremiumRoute
 }
 
@@ -86,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/premium'
       fullPath: '/premium'
       preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nutrition': {
@@ -102,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MikuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fitness': {
       id: '/fitness'
       path: '/fitness'
@@ -109,23 +172,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FitnessRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   FitnessRoute: FitnessRoute,
+  LoginRoute: LoginRoute,
   MikuRoute: MikuRoute,
   NutritionRoute: NutritionRoute,
+  OnboardingRoute: OnboardingRoute,
   PremiumRoute: PremiumRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
