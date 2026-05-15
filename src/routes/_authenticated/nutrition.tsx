@@ -12,7 +12,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-export const Route = createFileRoute("/nutrition")({
+export const Route = createFileRoute("/_authenticated/nutrition")({
   component: Nutrition,
   head: () => ({ meta: [{ title: "NutriMiku — Nutrition" }] }),
 });
