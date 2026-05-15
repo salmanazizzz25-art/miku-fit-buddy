@@ -138,9 +138,6 @@ function LoginPage() {
           <GoogleIcon /> Continue with Google
         </button>
 
-        <p className="text-[10px] text-muted-foreground text-center mt-4">
-          Admin? <Link to="/admin/login" className="text-primary">Admin login</Link>
-        </p>
       </div>
     </div>
   );
