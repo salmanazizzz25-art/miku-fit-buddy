@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Send, Mic, Lock } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { MikuCharacter } from "@/components/MikuCharacter";
-import { mikuChat, cannedReplies } from "@/lib/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/_authenticated/miku")({
   component: MikuChat,
@@ -12,28 +13,78 @@ export const Route = createFileRoute("/_authenticated/miku")({
 });
 
 type Msg = { from: "user" | "miku"; text: string };
+type ClaudeMsg = { role: "user" | "assistant"; content: string };
 
 function MikuChat() {
-  const [messages, setMessages] = useState<Msg[]>(mikuChat);
+  const { user } = useSession();
+  const [messages, setMessages] = useState<Msg[]>([
+    { from: "miku", text: "Hey master! I'm Miku, your personal nutrition companion 💚 Ask me anything about food, fitness, or just chat!" }
+  ]);
+  const [claudeHistory, setClaudeHistory] = useState<ClaudeMsg[]>([]);
   const [input, setInput] = useState("");
-  const [mood, setMood] = useState<"happy" | "cheer" | "idle">("happy");
+  const [mood, setMood] = useState<"happy" | "cheer" | "concerned" | "idle">("happy");
+  const [typing, setTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  }, [messages, typing]);
 
-  const send = () => {
+  const detectMood = (text: string): "happy" | "cheer" | "concerned" | "idle" => {
+    const lower = text.toLowerCase();
+    if (lower.includes("amazing") || lower.includes("great") || lower.includes("proud") || lower.includes("awesome")) return "cheer";
+    if (lower.includes("worried") || lower.includes("careful") || lower.includes("concern") || lower.includes("make sure")) return "concerned";
+    if (lower.includes("💚") || lower.includes("✨") || lower.includes("🌟") || lower.includes("happy")) return "happy";
+    return "happy";
+  };
+
+  const send = async () => {
     const text = input.trim();
-    if (!text) return;
-    setMessages((m) => [...m, { from: "user", text }]);
+    if (!text || typing) return;
+
+    const userMsg: Msg = { from: "user", text };
+    const claudeMsg: ClaudeMsg = { role: "user", content: text };
+
+    setMessages((m) => [...m, userMsg]);
+    setClaudeHistory((h) => [...h, claudeMsg]);
     setInput("");
-    setMood("cheer");
-    setTimeout(() => {
-      const reply = cannedReplies[Math.floor(Math.random() * cannedReplies.length)];
+    setTyping(true);
+    setMood("idle");
+
+    try {
+      const newHistory = [...claudeHistory, claudeMsg];
+
+      const { data, error } = await supabase.functions.invoke("miku-chat", {
+        body: {
+          messages: newHistory,
+          userContext: {
+            goal: "Cut",
+            calories: 1480,
+            calorieTarget: 2100,
+            proteinRemaining: 48,
+            streak: 14,
+            bondLevel: 12,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      const reply = data.reply;
+      const detectedMood = detectMood(reply);
+
       setMessages((m) => [...m, { from: "miku", text: reply }]);
-      setMood("happy");
-    }, 700);
+      setClaudeHistory((h) => [...h, { role: "assistant", content: reply }]);
+      setMood(detectedMood);
+    } catch (err) {
+      setMessages((m) => [
+        ...m,
+        { from: "miku", text: "Oops, something went wrong on my end! Try again, master 💦" },
+      ]);
+      setMood("concerned");
+    } finally {
+      setTyping(false);
+    }
   };
 
   return (
@@ -50,7 +101,9 @@ function MikuChat() {
           }}
         />
         <MikuCharacter size={200} mood={mood} />
-        <div className="text-xs text-primary font-semibold mt-2">Bond Lv. 12 · Mood: Happy</div>
+        <div className="text-xs text-primary font-semibold mt-2">
+          Bond Lv. 12 · Mood: {mood.charAt(0).toUpperCase() + mood.slice(1)}
+        </div>
       </div>
 
       {/* Chat */}
@@ -75,8 +128,34 @@ function MikuChat() {
                 </div>
               </motion.div>
             ))}
+
+            {/* Typing indicator */}
+            {typing && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex justify-start"
+              >
+                <div className="bg-muted/50 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1 items-center">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="w-2 h-2 rounded-full bg-primary"
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        delay: i * 0.15,
+                      }}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
+
         <div className="border-t border-border/40 p-2 flex items-center gap-2">
           <input
             value={input}
@@ -96,7 +175,8 @@ function MikuChat() {
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={send}
-            className="w-9 h-9 rounded-full grid place-items-center text-[var(--primary-foreground)] glow-ring"
+            disabled={typing}
+            className="w-9 h-9 rounded-full grid place-items-center text-[var(--primary-foreground)] glow-ring disabled:opacity-50"
             style={{ background: "linear-gradient(135deg, var(--color-cyan), var(--color-mint))" }}
           >
             <Send className="w-4 h-4" />
