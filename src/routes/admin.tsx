@@ -21,11 +21,27 @@ const ADMIN_EMAIL = "salmanaziz@nutrimiku.com";
 
 type UserRow = {
   id: string;
-  name: string;
-  goal: string;
+  name: string | null;
+  goal: string | null;
   premium: boolean;
   streak: number;
   created_at: string;
+};
+
+type FoodRow = {
+  id: string;
+  name: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  serving: string | null;
+};
+
+type WorkoutPlanRow = {
+  id: string;
+  name: string;
+  description: string | null;
 };
 
 type Tab = "overview" | "users" | "food" | "workouts" | "broadcast";
@@ -43,19 +59,16 @@ function AdminDashboard() {
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [foods, setFoods] = useState<any[]>([]);
-  const [workoutPlans, setWorkoutPlans] = useState<any[]>([]);
-  const [signupTrend, setSignupTrend] = useState<any[]>([]);
+  const [foods, setFoods] = useState<FoodRow[]>([]);
+  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlanRow[]>([]);
+  const [signupTrend, setSignupTrend] = useState<{ day: string; signups: number }[]>([]);
   const [newFood, setNewFood] = useState({
-    name: "", kcal_per_100g: "", protein_per_100g: "",
-    carbs_per_100g: "", fats_per_100g: "", category: "",
+    name: "", kcal: "", protein: "", carbs: "", fats: "", serving: "",
   });
 
   const login = async () => {
     setError("");
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email, password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { setError(error.message); return; }
     if (data.user?.email !== ADMIN_EMAIL) {
       await supabase.auth.signOut();
@@ -69,22 +82,21 @@ function AdminDashboard() {
   const fetchAll = async () => {
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, name, goal, premium, streak, created_at")
       .order("created_at", { ascending: false });
-    setUsers(profiles || []);
-    setTotalUsers(profiles?.length || 0);
-    setPremiumUsers(profiles?.filter((p) => p.premium).length || 0);
+    const rows = (profiles || []) as UserRow[];
+    setUsers(rows);
+    setTotalUsers(rows.length);
+    setPremiumUsers(rows.filter((p) => p.premium).length);
 
     const { data: foodData } = await supabase
-      .from("food_database")
+      .from("foods")
       .select("*")
       .order("created_at", { ascending: false });
-    setFoods(foodData || []);
+    setFoods((foodData as FoodRow[]) || []);
 
-    const { data: planData } = await supabase
-      .from("workout_plans")
-      .select("*");
-    setWorkoutPlans(planData || []);
+    const { data: planData } = await supabase.from("workout_plans").select("*");
+    setWorkoutPlans((planData as WorkoutPlanRow[]) || []);
 
     const last7 = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
@@ -93,9 +105,7 @@ function AdminDashboard() {
     });
     const trend = last7.map((date) => ({
       day: new Date(date).toLocaleDateString("en", { weekday: "short" }),
-      signups: (profiles || []).filter((p) =>
-        p.created_at?.startsWith(date)
-      ).length,
+      signups: rows.filter((p) => p.created_at?.startsWith(date)).length,
     }));
     setSignupTrend(trend);
   };
@@ -116,23 +126,20 @@ function AdminDashboard() {
   };
 
   const addFood = async () => {
-    await supabase.from("food_database").insert({
+    await supabase.from("foods").insert({
       name: newFood.name,
-      kcal_per_100g: parseFloat(newFood.kcal_per_100g),
-      protein_per_100g: parseFloat(newFood.protein_per_100g),
-      carbs_per_100g: parseFloat(newFood.carbs_per_100g),
-      fats_per_100g: parseFloat(newFood.fats_per_100g),
-      category: newFood.category,
+      kcal: parseInt(newFood.kcal) || 0,
+      protein: parseFloat(newFood.protein) || 0,
+      carbs: parseFloat(newFood.carbs) || 0,
+      fats: parseFloat(newFood.fats) || 0,
+      serving: newFood.serving || null,
     });
-    setNewFood({
-      name: "", kcal_per_100g: "", protein_per_100g: "",
-      carbs_per_100g: "", fats_per_100g: "", category: "",
-    });
+    setNewFood({ name: "", kcal: "", protein: "", carbs: "", fats: "", serving: "" });
     fetchAll();
   };
 
   const deleteFood = async (id: string) => {
-    await supabase.from("food_database").delete().eq("id", id);
+    await supabase.from("foods").delete().eq("id", id);
     fetchAll();
   };
 
@@ -142,20 +149,16 @@ function AdminDashboard() {
     navigate({ to: "/" });
   };
 
-  // Login screen
   if (!authed) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6"
-        style={{ background: "var(--color-background)" }}>
+      <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "var(--color-background)" }}>
         <div className="glass rounded-3xl p-8 w-full max-w-sm">
           <div className="flex items-center gap-2 mb-6">
             <Shield className="w-6 h-6 text-primary" />
             <h1 className="text-xl font-bold gradient-text">Admin Access</h1>
           </div>
           {error && (
-            <div className="text-sm text-red-400 bg-red-400/10 rounded-xl px-4 py-2 mb-4">
-              {error}
-            </div>
+            <div className="text-sm text-red-400 bg-red-400/10 rounded-xl px-4 py-2 mb-4">{error}</div>
           )}
           <input
             type="email"
@@ -176,9 +179,7 @@ function AdminDashboard() {
             whileTap={{ scale: 0.97 }}
             onClick={login}
             className="w-full py-3 rounded-xl font-bold text-[var(--primary-foreground)] glow-ring"
-            style={{
-              background: "linear-gradient(135deg, var(--color-cyan), var(--color-mint))",
-            }}
+            style={{ background: "linear-gradient(135deg, var(--color-cyan), var(--color-mint))" }}
           >
             Enter Dashboard
           </motion.button>
@@ -187,7 +188,7 @@ function AdminDashboard() {
     );
   }
 
-  const tabs: { id: Tab; label: string; icon: any }[] = [
+  const tabs: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "users", label: "Users", icon: Users },
     { id: "food", label: "Food DB", icon: Utensils },
@@ -196,34 +197,24 @@ function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen px-4 pt-6 pb-12 max-w-2xl mx-auto"
-      style={{ background: "var(--color-background)" }}>
-
-      {/* Header */}
+    <div className="min-h-screen px-4 pt-6 pb-12 max-w-2xl mx-auto" style={{ background: "var(--color-background)" }}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold gradient-text">Admin Dashboard</h1>
           <p className="text-xs text-muted-foreground">NutriMiku Control Panel</p>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={logout}
-          className="glass rounded-full p-2 text-muted-foreground"
-        >
+        <motion.button whileTap={{ scale: 0.9 }} onClick={logout} className="glass rounded-full p-2 text-muted-foreground">
           <LogOut className="w-4 h-4" />
         </motion.button>
       </div>
 
-      {/* Tab nav */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar mb-5 pb-1">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition ${
-              tab === t.id
-                ? "bg-primary text-primary-foreground"
-                : "glass text-muted-foreground"
+              tab === t.id ? "bg-primary text-primary-foreground" : "glass text-muted-foreground"
             }`}
           >
             <t.icon className="w-3.5 h-3.5" />
@@ -232,7 +223,6 @@ function AdminDashboard() {
         ))}
       </div>
 
-      {/* Overview tab */}
       {tab === "overview" && (
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
@@ -247,11 +237,7 @@ function AdminDashboard() {
                 <LineChart data={signupTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={{
-                    background: "var(--color-popover)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 12, fontSize: 12,
-                  }} />
+                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }} />
                   <Line type="monotone" dataKey="signups" stroke="var(--color-cyan)" strokeWidth={3} dot={{ fill: "var(--color-cyan)", r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -260,7 +246,6 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* Users tab */}
       {tab === "users" && (
         <div className="glass rounded-3xl p-4 space-y-3">
           <h3 className="font-bold text-sm">All Users ({totalUsers})</h3>
@@ -272,14 +257,12 @@ function AdminDashboard() {
                 <div>
                   <div className="font-medium text-sm">{u.name || "Unknown"}</div>
                   <div className="text-[10px] text-muted-foreground">
-                    {u.goal} · 🔥{u.streak}d · {new Date(u.created_at).toLocaleDateString()}
+                    {u.goal ?? "—"} · 🔥{u.streak}d · {new Date(u.created_at).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                    u.premium
-                      ? "bg-amber-500/20 text-amber-300"
-                      : "bg-muted/30 text-muted-foreground"
+                    u.premium ? "bg-amber-500/20 text-amber-300" : "bg-muted/30 text-muted-foreground"
                   }`}>
                     {u.premium ? "PRO" : "Free"}
                   </span>
@@ -297,7 +280,6 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* Food DB tab */}
       {tab === "food" && (
         <div className="space-y-4">
           <div className="glass rounded-3xl p-4">
@@ -310,22 +292,22 @@ function AdminDashboard() {
                 className="w-full bg-muted/30 rounded-xl px-3 py-2 text-sm outline-none"
               />
               <div className="grid grid-cols-2 gap-2">
-                <input placeholder="kcal/100g" value={newFood.kcal_per_100g}
-                  onChange={(e) => setNewFood((f) => ({ ...f, kcal_per_100g: e.target.value }))}
+                <input placeholder="kcal/100g" value={newFood.kcal}
+                  onChange={(e) => setNewFood((f) => ({ ...f, kcal: e.target.value }))}
                   className="bg-muted/30 rounded-xl px-3 py-2 text-sm outline-none" />
-                <input placeholder="protein/100g" value={newFood.protein_per_100g}
-                  onChange={(e) => setNewFood((f) => ({ ...f, protein_per_100g: e.target.value }))}
+                <input placeholder="protein/100g" value={newFood.protein}
+                  onChange={(e) => setNewFood((f) => ({ ...f, protein: e.target.value }))}
                   className="bg-muted/30 rounded-xl px-3 py-2 text-sm outline-none" />
-                <input placeholder="carbs/100g" value={newFood.carbs_per_100g}
-                  onChange={(e) => setNewFood((f) => ({ ...f, carbs_per_100g: e.target.value }))}
+                <input placeholder="carbs/100g" value={newFood.carbs}
+                  onChange={(e) => setNewFood((f) => ({ ...f, carbs: e.target.value }))}
                   className="bg-muted/30 rounded-xl px-3 py-2 text-sm outline-none" />
-                <input placeholder="fats/100g" value={newFood.fats_per_100g}
-                  onChange={(e) => setNewFood((f) => ({ ...f, fats_per_100g: e.target.value }))}
+                <input placeholder="fats/100g" value={newFood.fats}
+                  onChange={(e) => setNewFood((f) => ({ ...f, fats: e.target.value }))}
                   className="bg-muted/30 rounded-xl px-3 py-2 text-sm outline-none" />
               </div>
-              <input placeholder="Category (e.g. Protein, Carbs, Pakistani)"
-                value={newFood.category}
-                onChange={(e) => setNewFood((f) => ({ ...f, category: e.target.value }))}
+              <input placeholder="Serving (e.g. 100g, 1 cup)"
+                value={newFood.serving}
+                onChange={(e) => setNewFood((f) => ({ ...f, serving: e.target.value }))}
                 className="w-full bg-muted/30 rounded-xl px-3 py-2 text-sm outline-none" />
               <motion.button
                 whileTap={{ scale: 0.97 }}
@@ -345,7 +327,7 @@ function AdminDashboard() {
                   <div>
                     <div className="font-medium">{f.name}</div>
                     <div className="text-[10px] text-muted-foreground">
-                      {f.kcal_per_100g} kcal · {f.protein_per_100g}P · {f.category}
+                      {f.kcal} kcal · {f.protein}P · {f.serving ?? ""}
                     </div>
                   </div>
                   <button
@@ -361,28 +343,24 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* Workouts tab */}
       {tab === "workouts" && (
         <div className="glass rounded-3xl p-4">
           <h3 className="font-bold text-sm mb-3">Workout Plans ({workoutPlans.length})</h3>
           {workoutPlans.length === 0 ? (
             <div className="text-xs text-muted-foreground">
-              No workout plans yet. Add them via Supabase or build the form here.
+              No workout plans yet. Add them via the backend or build the form here.
             </div>
           ) : (
             workoutPlans.map((w) => (
               <div key={w.id} className="py-2 border-b border-border/30 last:border-0">
                 <div className="font-medium text-sm">{w.name}</div>
-                <div className="text-[10px] text-muted-foreground">
-                  {w.level} · {w.goal} · {w.days_per_week}x/week
-                </div>
+                <div className="text-[10px] text-muted-foreground">{w.description ?? ""}</div>
               </div>
             ))
           )}
         </div>
       )}
 
-      {/* Broadcast tab */}
       {tab === "broadcast" && (
         <div className="glass rounded-3xl p-5">
           <h3 className="font-bold text-sm mb-1 flex items-center gap-2">
@@ -404,9 +382,7 @@ function AdminDashboard() {
             onClick={sendBroadcast}
             disabled={sending}
             className="w-full py-3 rounded-xl font-bold text-[var(--primary-foreground)] flex items-center justify-center gap-2"
-            style={{
-              background: "linear-gradient(135deg, var(--color-cyan), var(--color-mint))",
-            }}
+            style={{ background: "linear-gradient(135deg, var(--color-cyan), var(--color-mint))" }}
           >
             <Send className="w-4 h-4" />
             {sending ? "Sending..." : sent ? "Sent! ✓" : "Send to All Users"}
@@ -420,7 +396,7 @@ function AdminDashboard() {
 function StatCard({
   icon: Icon, label, value, color,
 }: {
-  icon: any; label: string; value: any; color: string;
+  icon: typeof BarChart3; label: string; value: string | number; color: string;
 }) {
   return (
     <div className="glass rounded-2xl p-3 text-center">
