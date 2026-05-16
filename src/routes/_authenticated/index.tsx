@@ -1,7 +1,6 @@
-import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight, Settings } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight } from "lucide-react";
+import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight, Settings } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { MikuCharacter } from "@/components/MikuCharacter";
 import { RingChart } from "@/components/RingChart";
