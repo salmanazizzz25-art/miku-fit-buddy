@@ -1,7 +1,6 @@
-import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight, Settings } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight } from "lucide-react";
+import { Flame, Droplet, Footprints, Plus, Sparkles, ChevronRight, Settings } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { MikuCharacter } from "@/components/MikuCharacter";
 import { RingChart } from "@/components/RingChart";
@@ -72,7 +71,14 @@ function Home() {
       .select("*")
       .eq("id", user!.id)
       .single();
-    if (data) setProfile(data);
+    if (data) setProfile({
+      name: data.name ?? "Master",
+      level: (data as any).level ?? 1,
+      xp: (data as any).xp ?? 0,
+      xp_max: (data as any).xp_max ?? 1000,
+      streak: (data as any).streak ?? 0,
+      goal: data.goal ?? "Maintain",
+    });
   };
 
   const fetchTodayMeals = async () => {
@@ -81,7 +87,7 @@ function Home() {
       .from("meal_logs")
       .select("kcal, protein, carbs, fats")
       .eq("user_id", user!.id)
-      .eq("date", today);
+      .eq("log_date", today);
     if (data) {
       setTotals(
         data.reduce(
@@ -104,7 +110,7 @@ function Home() {
       .from("daily_stats")
       .select("*")
       .eq("user_id", user!.id)
-      .eq("date", today)
+      .eq("log_date", today)
       .single();
     if (data) setDailyStats(data);
   };
@@ -117,7 +123,7 @@ function Home() {
       .from("daily_stats")
       .upsert({
         user_id: user!.id,
-        date: today,
+        log_date: today,
         water_glasses: newVal,
         steps: dailyStats.steps,
       });
@@ -130,7 +136,7 @@ function Home() {
       .from("daily_stats")
       .upsert({
         user_id: user!.id,
-        date: today,
+        log_date: today,
         water_glasses: dailyStats.water_glasses,
         steps,
       });
@@ -161,12 +167,8 @@ function Home() {
     </Link>
   </div>
 }
-          <div className="glass rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold">
-            <Flame className="w-4 h-4 text-orange-400" />
-            {profile.streak}d
-          </div>
-        }
       />
+
 
       {/* Miku quote card */}
       <motion.div
