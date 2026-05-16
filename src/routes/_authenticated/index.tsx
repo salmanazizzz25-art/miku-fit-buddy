@@ -71,7 +71,14 @@ function Home() {
       .select("*")
       .eq("id", user!.id)
       .single();
-    if (data) setProfile(data);
+    if (data) setProfile({
+      name: data.name ?? "Master",
+      level: (data as any).level ?? 1,
+      xp: (data as any).xp ?? 0,
+      xp_max: (data as any).xp_max ?? 1000,
+      streak: (data as any).streak ?? 0,
+      goal: data.goal ?? "Maintain",
+    });
   };
 
   const fetchTodayMeals = async () => {
