@@ -160,12 +160,8 @@ function Home() {
     </Link>
   </div>
 }
-          <div className="glass rounded-full px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold">
-            <Flame className="w-4 h-4 text-orange-400" />
-            {profile.streak}d
-          </div>
-        }
       />
+
 
       {/* Miku quote card */}
       <motion.div
