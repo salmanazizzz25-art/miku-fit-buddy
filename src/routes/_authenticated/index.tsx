@@ -87,7 +87,7 @@ function Home() {
       .from("meal_logs")
       .select("kcal, protein, carbs, fats")
       .eq("user_id", user!.id)
-      .eq("date", today);
+      .eq("log_date", today);
     if (data) {
       setTotals(
         data.reduce(
@@ -110,7 +110,7 @@ function Home() {
       .from("daily_stats")
       .select("*")
       .eq("user_id", user!.id)
-      .eq("date", today)
+      .eq("log_date", today)
       .single();
     if (data) setDailyStats(data);
   };
@@ -123,7 +123,7 @@ function Home() {
       .from("daily_stats")
       .upsert({
         user_id: user!.id,
-        date: today,
+        log_date: today,
         water_glasses: newVal,
         steps: dailyStats.steps,
       });
@@ -136,7 +136,7 @@ function Home() {
       .from("daily_stats")
       .upsert({
         user_id: user!.id,
-        date: today,
+        log_date: today,
         water_glasses: dailyStats.water_glasses,
         steps,
       });
