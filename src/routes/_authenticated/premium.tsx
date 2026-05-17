@@ -7,6 +7,7 @@ import {
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { MikuCharacter } from "@/components/MikuCharacter";
 import { usePremium } from "@/hooks/use-premium";
+import { useSession } from "@/hooks/use-session";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_authenticated/premium")({
@@ -45,6 +46,8 @@ const features = [
 function Premium() {
   const [plan, setPlan] = useState<"month" | "year">("year");
   const { isPremium, loading, togglePremium } = usePremium();
+  const { user } = useSession();
+  const isAdmin = user?.email === "salmanaziz@nutrimiku.com";
 
   return (
     <AppShell>
@@ -74,8 +77,6 @@ function Premium() {
             ? "All features unlocked. Miku is so happy! 💚"
             : "Voice, advanced analytics, and the deepest bond. Cancel anytime."}
         </p>
-
-        {/* Current status badge */}
         <div className={`inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full text-xs font-bold ${
           isPremium
             ? "bg-amber-500/20 text-amber-300"
@@ -86,39 +87,41 @@ function Premium() {
         </div>
       </motion.div>
 
-      {/* Dev Test Mode Toggle */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="glass rounded-2xl p-4 mb-4 border border-amber-500/30"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-amber-300" />
-            <div>
-              <div className="text-sm font-bold text-amber-300">Test Mode</div>
-              <div className="text-[10px] text-muted-foreground">
-                Toggle premium to test all features
+      {/* Dev Test Mode — admin only */}
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="glass rounded-2xl p-4 mb-4 border border-amber-500/30"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FlaskConical className="w-4 h-4 text-amber-300" />
+              <div>
+                <div className="text-sm font-bold text-amber-300">Test Mode</div>
+                <div className="text-[10px] text-muted-foreground">
+                  Toggle premium to test all features
+                </div>
               </div>
             </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={togglePremium}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                isPremium ? "bg-amber-400" : "bg-muted/50"
+              }`}
+            >
+              <motion.div
+                animate={{ x: isPremium ? 24 : 2 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                className="absolute top-1 w-4 h-4 rounded-full bg-white"
+              />
+            </motion.button>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={togglePremium}
-            className={`relative w-12 h-6 rounded-full transition-colors ${
-              isPremium ? "bg-amber-400" : "bg-muted/50"
-            }`}
-          >
-            <motion.div
-              animate={{ x: isPremium ? 24 : 2 }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              className="absolute top-1 w-4 h-4 rounded-full bg-white"
-            />
-          </motion.button>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
-      {/* Plan toggle — only show if not premium */}
+      {/* Plan toggle */}
       {!isPremium && (
         <div className="grid grid-cols-2 gap-3 mb-4">
           <PlanCard
@@ -155,7 +158,11 @@ function Premium() {
               <div className="font-semibold text-sm flex items-center gap-1.5">
                 {f.title}
                 {isPremium && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                {!isPremium && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">PRO</span>}
+                {!isPremium && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">
+                    PRO
+                  </span>
+                )}
               </div>
               <div className="text-[11px] text-muted-foreground">{f.desc}</div>
             </div>
@@ -163,7 +170,7 @@ function Premium() {
         ))}
       </div>
 
-      {/* CTA — only show if not premium */}
+      {/* CTA */}
       {!isPremium && (
         <>
           <motion.button

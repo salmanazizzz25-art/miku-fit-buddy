@@ -65,7 +65,7 @@ function Fitness() {
       .from("workout_logs")
       .select("*")
       .eq("user_id", user!.id)
-      .order("created_at", { ascending: false })
+      .order("logged_at", { ascending: false })
       .limit(10);
     setWorkouts(data || []);
     setLoading(false);

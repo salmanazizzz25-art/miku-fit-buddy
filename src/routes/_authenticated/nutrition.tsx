@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, Plus, ScanBarcode, X, Check } from "lucide-react";
+import { Search, Plus, ScanBarcode, X } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/use-session";
@@ -30,7 +30,6 @@ type MealLog = {
   carbs: number;
   fats: number;
   log_date: string;
-  created_at: string;
 };
 
 type FoodItem = {
@@ -40,16 +39,15 @@ type FoodItem = {
   protein: number;
   carbs: number;
   fats: number;
-  serving: string | null;
 };
 
 type WeekDay = { day: string; kcal: number };
 
-const MEAL_TYPES: { id: MealType; label: string }[] = [
-  { id: "breakfast", label: "Breakfast" },
-  { id: "lunch", label: "Lunch" },
-  { id: "snack", label: "Snack" },
-  { id: "dinner", label: "Dinner" },
+const MEAL_TYPES: { id: MealType; label: string; emoji: string }[] = [
+  { id: "breakfast", label: "Breakfast", emoji: "🌅" },
+  { id: "lunch", label: "Lunch", emoji: "☀️" },
+  { id: "snack", label: "Snack", emoji: "🍎" },
+  { id: "dinner", label: "Dinner", emoji: "🌙" },
 ];
 
 function Nutrition() {
@@ -59,9 +57,9 @@ function Nutrition() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<FoodItem[]>([]);
-  const [addingTo, setAddingTo] = useState<MealType | null>(null);
-  const [grams, setGrams] = useState("100");
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [grams, setGrams] = useState("100");
+  const [logging, setLogging] = useState(false);
 
   const calorieTarget = 2100;
   const proteinTarget = 160;
@@ -77,13 +75,12 @@ function Nutrition() {
 
   const fetchTodayMeals = async () => {
     const today = new Date().toISOString().split("T")[0];
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("meal_logs")
       .select("*")
       .eq("user_id", user!.id)
-      .eq("log_date", today)
-      .order("created_at", { ascending: true });
-    setMeals(data || []);
+      .order("logged_at", { ascending: true });
+    if (!error) setMeals((data || []).filter((m) => m.log_date === today));
     setLoading(false);
   };
 
@@ -97,8 +94,7 @@ function Nutrition() {
     const { data } = await supabase
       .from("meal_logs")
       .select("log_date, kcal")
-      .eq("user_id", user!.id)
-      .in("log_date", days);
+      .eq("user_id", user!.id);
 
     const grouped = days.map((date) => ({
       day: new Date(date).toLocaleDateString("en", { weekday: "short" }),
@@ -111,6 +107,7 @@ function Nutrition() {
 
   const searchFoods = async (query: string) => {
     setSearch(query);
+    setSelectedFood(null);
     if (query.length < 2) { setSearchResults([]); return; }
     const { data } = await supabase
       .from("foods")
@@ -120,26 +117,34 @@ function Nutrition() {
     setSearchResults((data as FoodItem[]) || []);
   };
 
-  const logMeal = async () => {
-    if (!selectedFood || !addingTo || !user) return;
+  const logMeal = async (mealType: MealType) => {
+    if (!selectedFood || !user || logging) return;
+    setLogging(true);
     const g = parseFloat(grams) / 100;
-    await supabase.from("meal_logs").insert({
+    const today = new Date().toISOString().split("T")[0];
+    
+    const { error } = await supabase.from("meal_logs").insert({
       user_id: user.id,
-      log_date: new Date().toISOString().split("T")[0],
-      meal_type: addingTo,
+      log_date: today,
+      meal_type: mealType,
       name: selectedFood.name,
       kcal: Math.round(selectedFood.kcal * g),
       protein: Math.round(selectedFood.protein * g),
       carbs: Math.round(selectedFood.carbs * g),
       fats: Math.round(selectedFood.fats * g),
     });
-    setSelectedFood(null);
-    setAddingTo(null);
-    setSearch("");
-    setSearchResults([]);
-    setGrams("100");
-    fetchTodayMeals();
-    fetchWeekData();
+
+    if (error) {
+      console.error("Log meal error:", error);
+    } else {
+      setSelectedFood(null);
+      setSearch("");
+      setSearchResults([]);
+      setGrams("100");
+      fetchTodayMeals();
+      fetchWeekData();
+    }
+    setLogging(false);
   };
 
   const deleteMeal = async (id: string) => {
@@ -158,9 +163,10 @@ function Nutrition() {
     { kcal: 0, protein: 0, carbs: 0, fats: 0 }
   );
 
-  const grouped = MEAL_TYPES.map(({ id, label }) => ({
+  const grouped = MEAL_TYPES.map(({ id, label, emoji }) => ({
     id,
     label,
+    emoji,
     items: meals.filter((m) => m.meal_type === id),
   }));
 
@@ -168,14 +174,20 @@ function Nutrition() {
     <AppShell>
       <PageHeader title="Nutrition" subtitle="Fuel the grind, master." />
 
+      {/* Search bar */}
       <div className="glass rounded-2xl p-2 flex items-center gap-2 mb-2">
         <Search className="w-4 h-4 text-muted-foreground ml-2" />
         <input
-          placeholder="Search foods…"
+          placeholder="Search foods to log…"
           value={search}
           onChange={(e) => searchFoods(e.target.value)}
           className="bg-transparent flex-1 text-sm py-2 outline-none placeholder:text-muted-foreground"
         />
+        {search && (
+          <button onClick={() => { setSearch(""); setSearchResults([]); setSelectedFood(null); }}>
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        )}
         <motion.button
           whileTap={{ scale: 0.92 }}
           className="w-9 h-9 rounded-xl grid place-items-center bg-primary/20 text-primary"
@@ -184,78 +196,100 @@ function Nutrition() {
         </motion.button>
       </div>
 
+      {/* Search results */}
       <AnimatePresence>
         {searchResults.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="glass rounded-2xl p-2 mb-3 space-y-1"
+            className="glass rounded-2xl p-3 mb-3 space-y-2"
           >
-            {!addingTo && (
-              <div className="text-xs text-muted-foreground px-2 pb-1">
-                Add to which meal?
+            {/* Food list */}
+            {searchResults.map((food) => (
+              <div
+                key={food.id}
+                onClick={() => setSelectedFood(food)}
+                className={`px-3 py-2 rounded-xl cursor-pointer text-sm transition ${
+                  selectedFood?.id === food.id
+                    ? "bg-primary/20 border border-primary/40"
+                    : "hover:bg-muted/30"
+                }`}
+              >
+                <div className="font-medium">{food.name}</div>
+                <div className="text-[10px] text-muted-foreground">
+                  {food.kcal} kcal · {food.protein}P · {food.carbs}C · {food.fats}F per 100g
+                </div>
               </div>
-            )}
-            {!addingTo ? (
-              <div className="flex gap-2 px-2 pb-2 flex-wrap">
-                {MEAL_TYPES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setAddingTo(t.id)}
-                    className="text-xs px-3 py-1 rounded-full bg-primary/20 text-primary font-semibold"
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <>
-                {searchResults.map((food) => (
-                  <div
-                    key={food.id}
-                    onClick={() => setSelectedFood(food)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer text-sm transition ${
-                      selectedFood?.id === food.id ? "bg-primary/20" : "hover:bg-muted/30"
-                    }`}
-                  >
-                    <div>
-                      <div className="font-medium">{food.name}</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        {food.kcal} kcal · {food.protein}P · {food.carbs}C · {food.fats}F per 100g
-                      </div>
+            ))}
+
+            {/* Grams + meal picker — shows after selecting food */}
+            <AnimatePresence>
+              {selectedFood && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="border-t border-border/40 pt-3 mt-2"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="text-xs font-semibold text-primary flex-1">
+                      {selectedFood.name}
                     </div>
-                    {selectedFood?.id === food.id && (
-                      <Check className="w-4 h-4 text-primary" />
-                    )}
-                  </div>
-                ))}
-                {selectedFood && (
-                  <div className="flex items-center gap-2 px-3 pt-2">
                     <input
                       type="number"
                       value={grams}
                       onChange={(e) => setGrams(e.target.value)}
-                      className="w-20 bg-muted/30 rounded-xl px-3 py-1.5 text-sm outline-none"
-                      placeholder="grams"
+                      className="w-16 bg-muted/30 rounded-xl px-2 py-1.5 text-sm outline-none text-center"
                     />
-                    <span className="text-xs text-muted-foreground">grams</span>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={logMeal}
-                      className="ml-auto px-4 py-1.5 rounded-xl text-xs font-bold text-[var(--primary-foreground)]"
-                      style={{ background: "linear-gradient(135deg, var(--color-cyan), var(--color-mint))" }}
-                    >
-                      Log meal
-                    </motion.button>
+                    <span className="text-xs text-muted-foreground">g</span>
                   </div>
-                )}
-              </>
-            )}
+
+                  {/* Macro preview */}
+                  <div className="flex gap-2 mb-3">
+                    {["kcal", "P", "C", "F"].map((label, i) => {
+                      const vals = [
+                        Math.round(selectedFood.kcal * parseFloat(grams || "0") / 100),
+                        Math.round(selectedFood.protein * parseFloat(grams || "0") / 100),
+                        Math.round(selectedFood.carbs * parseFloat(grams || "0") / 100),
+                        Math.round(selectedFood.fats * parseFloat(grams || "0") / 100),
+                      ];
+                      return (
+                        <div key={label} className="flex-1 text-center bg-muted/20 rounded-xl py-1">
+                          <div className="text-xs font-bold">{vals[i]}</div>
+                          <div className="text-[9px] text-muted-foreground">{label}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Meal type buttons */}
+                  <div className="text-[10px] text-muted-foreground mb-2 uppercase tracking-wider">
+                    Add to meal:
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {MEAL_TYPES.map((t) => (
+                      <motion.button
+                        key={t.id}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => logMeal(t.id)}
+                        disabled={logging}
+                        className="py-2 rounded-xl text-xs font-bold text-[var(--primary-foreground)] flex items-center justify-center gap-1.5 disabled:opacity-50"
+                        style={{
+                          background: "linear-gradient(135deg, var(--color-cyan), var(--color-mint))",
+                        }}
+                      >
+                        {t.emoji} {t.label}
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Today summary */}
       <div className="grid grid-cols-4 gap-2 mb-5">
         <Stat label="kcal" v={totals.kcal} t={calorieTarget} c="var(--color-cyan)" />
         <Stat label="P" v={totals.protein} t={proteinTarget} c="var(--color-mint)" />
@@ -263,18 +297,15 @@ function Nutrition() {
         <Stat label="F" v={totals.fats} t={fatsTarget} c="var(--color-pink)" />
       </div>
 
+      {/* Meals */}
       <div className="space-y-3 mb-6">
-        {grouped.map(({ id, label, items }) => (
+        {grouped.map(({ id, label, emoji, items }) => (
           <div key={id} className="glass rounded-3xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-sm">{label}</h3>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => { setAddingTo(id); searchFoods("a"); }}
-                className="w-7 h-7 rounded-full grid place-items-center bg-primary/20 text-primary"
-              >
-                <Plus className="w-4 h-4" />
-              </motion.button>
+              <h3 className="font-bold text-sm">{emoji} {label}</h3>
+              <div className="text-xs text-muted-foreground">
+                {items.reduce((s, m) => s + m.kcal, 0)} kcal
+              </div>
             </div>
             {loading ? (
               <div className="text-xs text-muted-foreground py-2">Loading...</div>
@@ -306,6 +337,7 @@ function Nutrition() {
         ))}
       </div>
 
+      {/* Weekly chart */}
       <div className="glass rounded-3xl p-4">
         <h3 className="font-bold text-sm mb-3">This Week · Calories</h3>
         <div className="h-44">
