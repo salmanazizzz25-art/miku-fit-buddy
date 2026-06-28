@@ -70,7 +70,7 @@ function Home() {
       .from("profiles")
       .select("*")
       .eq("id", user!.id)
-      .single();
+      .maybeSingle();
     if (data) setProfile({
       name: data.name ?? "Master",
       level: (data as any).level ?? 1,
